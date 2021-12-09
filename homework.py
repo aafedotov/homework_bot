@@ -47,13 +47,13 @@ def get_api_answer(current_timestamp):
         api_answer = requests.get(ENDPOINT,
                                   headers=HEADERS,
                                   params=params)
-        global.is_api_error = False
+        global is_api_error = False
         return api_answer.json()
     except Exception as error:
         message = f'Ошибка при запросе к API: {error}'
-        if not global.is_api_error:
+        if not global is_api_error:
             send_message(bot, message)
-            global.is_api_error = True
+            global is_api_error = True
         logging.error(message)
         return error
 
@@ -63,19 +63,19 @@ def check_response(response):
     if type(response) == dict:
         try:
             result = response['homeworks']
-            global.is_api_error = False
-            return return result
+            global is_api_error = False
+            return result
         except Exception as error:
             message = f'В полученном от API результате нет ожидаемого ключа: {error}'
-            if not global.is_api_error:
+            if not global is_api_error:
                 send_message(bot, message)
-                global.is_api_error = True
+                global is_api_error = True
             logging.error(message)
             return None
     message = 'Невалидный ответ от API'
-    if not global.is_api_error:
+    if not global is_api_error:
         send_message(bot, message)
-        global.is_api_error = True
+        global is_api_error = True
     logging.error(message)
     return None
 
