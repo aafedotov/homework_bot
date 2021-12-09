@@ -41,41 +41,43 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Делаем запрос к эндпоинту API Яндекс.Домашка."""
+    global is_api_error
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
         api_answer = requests.get(ENDPOINT,
                                   headers=HEADERS,
                                   params=params)
-        global is_api_error = False
+        is_api_error = False
         return api_answer.json()
     except Exception as error:
         message = f'Ошибка при запросе к API: {error}'
-        if not global is_api_error:
+        if not is_api_error:
             send_message(bot, message)
-            global is_api_error = True
+            is_api_error = True
         logging.error(message)
         return error
 
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
+    global is_api_error
     if type(response) == dict:
         try:
             result = response['homeworks']
-            global is_api_error = False
+            is_api_error = False
             return result
         except Exception as error:
             message = f'В полученном от API результате нет ожидаемого ключа: {error}'
-            if not global is_api_error:
+            if not is_api_error:
                 send_message(bot, message)
-                global is_api_error = True
+                is_api_error = True
             logging.error(message)
             return None
     message = 'Невалидный ответ от API'
-    if not global is_api_error:
+    if not is_api_error:
         send_message(bot, message)
-        global is_api_error = True
+        is_api_error = True
     logging.error(message)
     return None
 
