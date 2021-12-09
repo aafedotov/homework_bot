@@ -48,7 +48,7 @@ def get_api_answer(current_timestamp):
                               headers=HEADERS,
                               params=params)
     if api_answer.status_code != 200:
-        message = f'Ошибка при запросе к API.'
+        message = 'Ошибка при запросе к API.'
         raise message
     return api_answer.json()
 
@@ -111,6 +111,7 @@ def main():
                 send_message(bot, message)
             else:
                 logging.debug('Нет новых статусов')
+                send_message(bot, 'Нет новых статусов')
             current_timestamp = int(time.time())
             is_api_error = False
             time.sleep(RETRY_TIME)
