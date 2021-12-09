@@ -1,8 +1,8 @@
+import logging
 import os
 import time
-import requests
-import logging
 
+import requests
 import telegram
 from dotenv import load_dotenv
 
@@ -28,7 +28,6 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-is_api_error = False
 
 def send_message(bot, message):
     """Отправляем сообщение через Telegram API."""
@@ -37,76 +36,51 @@ def send_message(bot, message):
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.info(f'Cообщение {message} успешно отправлено.')
     except Exception as error:
-        logging.error(f'Не удалось отправить сообщение: {message}. Ошибка: {error}')
+        logging.error(f'Не удалось отправить сообщение:'
+                      f'{message}. Ошибка: {error}')
 
 
 def get_api_answer(current_timestamp):
     """Делаем запрос к эндпоинту API Яндекс.Домашка."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    global is_api_error
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     api_answer = requests.get(ENDPOINT,
                               headers=HEADERS,
                               params=params)
     if api_answer.status_code != 200:
-        if not is_api_error:
-            message = f'Ошибка при запросе к API.'
-            send_message(bot, message)
-            is_api_error = True
-        logging.error(message)
+        message = f'Ошибка при запросе к API.'
         raise message
-    is_api_error = False
     return api_answer.json()
 
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    global is_api_error
     if type(response) == dict:
         if 'homeworks' in response:
             result = response['homeworks']
             if type(result) == list:
-                is_api_error = False
                 return response['homeworks']
             message = 'homeworks извлечен из API не в виде списка'
-            if not is_api_error:
-                send_message(bot, message)
-                is_api_error = True
-            logging.error(message)
             raise message
         message = 'В полученном от API результате нет ожидаемого ключа'
-        if not is_api_error:
-            send_message(bot, message)
-            is_api_error = True
-        logging.error(message)
         raise message
     message = 'Невалидный ответ от API'
-    if not is_api_error:
-        send_message(bot, message)
-        is_api_error = True
-    logging.error(message)
     raise message
 
 
 def parse_status(homework):
     """Извлекаем статус домашки и возвращаем читабельную строку."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    global is_api_error
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if not homework_status:
-        raise 'Отсутствует ключ homework status'
+        message = 'Отсутствует ключ homework status'
+        raise message
     try:
         verdict = HOMEWORK_STATUSES[homework_status]
-        is_api_error = False
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
     except Exception as error:
-        message = f'Получен незадокументированный статус работы:{homework_status}'
-        if not is_api_error:
-            send_message(bot, message)
-            is_api_error = True
+        message = (f'Получен незадокументированный'
+                   f' статус работы:{homework_status}')
         logging.error(message)
         raise error
 
@@ -119,9 +93,6 @@ def check_tokens():
         logging.error('Проблема с CHAT_ID')
     if not PRACTICUM_TOKEN:
         message = 'Проблема с токеном API Яндекс'
-        if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
-            bot = telegram.Bot(token=TELEGRAM_TOKEN)
-            send_message(bot, message)
         logging.error(message)
     return bool(PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
 
@@ -129,6 +100,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    is_api_error = False
     current_timestamp = int(time.time())
     while check_tokens():
         try:
@@ -140,11 +112,14 @@ def main():
             else:
                 logging.debug('Нет новых статусов')
             current_timestamp = int(time.time())
+            is_api_error = False
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message)
-            send_message(bot, message)
+            if not is_api_error:
+                send_message(bot, message)
+            is_api_error = True
             time.sleep(RETRY_TIME)
 
 
