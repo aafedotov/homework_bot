@@ -55,7 +55,7 @@ def get_api_answer(current_timestamp):
             send_message(bot, message)
             is_api_error = True
         logging.error(message)
-        raise 'Ошибка при запросе к API.'
+        raise message
     is_api_error = False
     return api_answer.json()
 
@@ -130,7 +130,7 @@ def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    while True:
+    while check_tokens():
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
