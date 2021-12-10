@@ -10,11 +10,11 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = StreamHandler(stream=sys.stdout)
-handler.setFormatter(Formatter(fmt='[%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+handler.setFormatter(
+    Formatter(fmt='[%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
 load_dotenv()
@@ -36,12 +36,14 @@ HOMEWORK_STATUSES = {
 def send_message_decorator(func):
     """Декоратор для защиты от дублей сообщений."""
     memo = ''
+
     def wrapper(bot, message):
         if message == memo:
             pass
         else:
             memo = message
             func(bot, message)
+
     return wrapper
 
 
@@ -53,7 +55,7 @@ def send_message(bot, message):
         logger.info(f'Cообщение {message} успешно отправлено.')
     except exceptions.Send_error as error:
         logger.error(f'Не удалось отправить сообщение:'
-                      f'{message}. Ошибка: {error}')
+                     f'{message}. Ошибка: {error}')
 
 
 def get_api_answer(current_timestamp):
@@ -64,7 +66,7 @@ def get_api_answer(current_timestamp):
         api_answer = requests.get(ENDPOINT,
                                   headers=HEADERS,
                                   params=params)
-    except:
+    except exceptions.Api_request_error:
         raise exceptions.Api_request_error('Ошибка при запросе к API.')
     if api_answer.status_code != HTTPStatus.OK:
         message = 'Ошибка при запросе к API.'
