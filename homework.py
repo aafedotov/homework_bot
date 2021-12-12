@@ -38,12 +38,12 @@ def send_message_decorator(func):
     memo = ''
 
     def wrapper(bot, message):
+        nonlocal memo
         if message == memo:
             pass
         else:
             memo = message
             func(bot, message)
-
     return wrapper
 
 
