@@ -5,10 +5,11 @@ import time
 from http import HTTPStatus
 from logging import StreamHandler, Formatter
 
-import exceptions
 import requests
 import telegram
 from dotenv import load_dotenv
+
+import exceptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -53,7 +54,7 @@ def send_message(bot, message):
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logger.info(f'Cообщение {message} успешно отправлено.')
-    except exceptions.Send_error as error:
+    except exceptions.SendError as error:
         logger.error(f'Не удалось отправить сообщение:'
                      f'{message}. Ошибка: {error}')
 
@@ -66,14 +67,14 @@ def get_api_answer(current_timestamp):
         api_answer = requests.get(ENDPOINT,
                                   headers=HEADERS,
                                   params=params)
-    except exceptions.Api_request_error:
-        raise exceptions.Api_request_error('Ошибка при запросе к API.')
+    except exceptions.ApiNotResponse:
+        raise exceptions.ApiNotResponse('Ошибка при запросе к API.')
     if api_answer.status_code != HTTPStatus.OK:
         message = 'Ошибка при запросе к API.'
-        raise exceptions.Api_not_response(message)
+        raise exceptions.ApiNotResponse(message)
     if api_answer is None:
         message = 'Пустой ответ от API.'
-        raise exceptions.Api_empty_response(message)
+        raise exceptions.ApiNotResponse(message)
     return api_answer.json()
 
 
@@ -81,7 +82,7 @@ def check_response(response):
     """Проверяем ответ API на корректность."""
     if response is None:
         message = 'Получен пустой ответ от API'
-        raise exceptions.Api_empty_response(message)
+        raise exceptions.ApiEmptyResponse(message)
     if not isinstance(response, dict):
         message = 'Объект не типа dict'
         raise TypeError(message)
@@ -108,7 +109,7 @@ def parse_status(homework):
     if homework_status not in HOMEWORK_STATUSES:
         message = (f'Получен незадокументированный'
                    f' статус работы:{homework_status}')
-        raise exceptions.Api_status_not_in_docs(message)
+        raise exceptions.ApiStatusNotInDocs(message)
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -152,7 +153,7 @@ def main():
                 send_message(bot, message)
                 time.sleep(RETRY_TIME)
     else:
-        raise exceptions.Token_error('Проблема с токенами!')
+        raise exceptions.TokenError('Проблема с токенами!')
 
 
 if __name__ == '__main__':

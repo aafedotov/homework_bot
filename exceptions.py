@@ -1,18 +1,18 @@
-class Send_error(Exception):
+class SendError(Exception):
     pass
 
 
-class Api_not_response(Exception):
+class ApiNotResponse(Exception):
     pass
 
 
-class Api_status_not_in_docs(Exception):
+class ApiStatusNotInDocs(Exception):
     pass
 
 
-class Api_empty_response(Exception):
+class ApiEmptyResponse(Exception):
     pass
 
 
-class Token_error(Exception):
+class TokenError(Exception):
     pass
