@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(
-    Formatter(fmt='[%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    Formatter(fmt='[%(asctime)s - %(name)s - %(levelname)s - %(message)s]'))
 logger.addHandler(handler)
 
 load_dotenv()
@@ -133,27 +133,27 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-    if check_tokens():
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        current_timestamp = int(time.time())
-        while True:
-            try:
-                response = get_api_answer(current_timestamp)
-                homework = check_response(response)
-                if homework:
-                    message = parse_status(homework)
-                    send_message(bot, message)
-                else:
-                    logger.debug('Нет новых статусов')
-                current_timestamp = int(time.time())
-                time.sleep(RETRY_TIME)
-            except Exception as error:
-                message = f'Сбой в работе программы: {error}'
-                logger.error(message)
-                send_message(bot, message)
-                time.sleep(RETRY_TIME)
-    else:
+    if not check_tokens():
         raise exceptions.TokenError('Проблема с токенами!')
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    current_timestamp = int(time.time())
+    while True:
+        try:
+            response = get_api_answer(current_timestamp)
+            homework = check_response(response)
+            if homework:
+                for hw in homework:
+                    message = parse_status(hw)
+                    send_message(bot, message)
+            else:
+                logger.debug('Нет новых статусов')
+            current_timestamp = int(time.time())
+            time.sleep(RETRY_TIME)
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            logger.error(message)
+            send_message(bot, message)
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
